@@ -1,4 +1,4 @@
-name: x86_64 UCRT release builds
+name: x86_64-posix-seh-ucrt
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
       shell: msys2 {0}
       run: sed -i 's/--disable-nls/--enable-nls/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
 
-    - name: Download sources
+    - name: 下载源文件
       shell: msys2 {0}
       run: >-
         ./build
@@ -36,15 +36,15 @@ jobs:
         --exceptions=seh
         --arch=x86_64
         --bin-compress
-        --enable-languages=c,c++,fortran
+        --enable-languages=c,c++
         --logviewer-command=cat
         --fetch-only
 
-    - name: Compress sources
+    - name: 压缩源文件
       run: 7z a src.7z src "-xr!.git"
       working-directory: c:/buildroot
 
-    - name: Upload sources
+    - name: 上传源文件
       uses: actions/upload-artifact@v7
       with:
         path: c:/buildroot/src.7z
@@ -52,13 +52,11 @@ jobs:
         archive: false
 
   build:
-    name: x86_64-${{ matrix.threads }}-seh-ucrt
+    name: x86_64-posix-seh-ucrt
     runs-on: windows-latest
     needs: download
     strategy:
       fail-fast: false
-      matrix:
-        threads: [posix, mcf]
 
     steps:
     - uses: actions/checkout@v7
@@ -72,17 +70,17 @@ jobs:
       shell: msys2 {0}
       run: sed -i 's/--disable-nls/--enable-nls/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
 
-    - name: Download sources
+    - name: 下载源文件
       uses: actions/download-artifact@v8
       with:
         name: src.7z
         path: c:/buildroot
 
-    - name: Extract sources
+    - name: 解压源文件
       run: 7z x src.7z
       working-directory: c:/buildroot
 
-    - name: Build
+    - name: 构建
       shell: msys2 {0}
       run: >-
         ./build
@@ -92,17 +90,17 @@ jobs:
         --rev=0
         --with-default-msvcrt=ucrt
         --rt-version=$MINGW_BUILDS_RT_VERSION
-        --threads=${{ matrix.threads }}
+        --threads=posix
         --exceptions=seh
         --arch=x86_64
         --bin-compress
-        --enable-languages=c,c++,fortran
+        --enable-languages=c,c++
         --logviewer-command=cat
 
-    - name: Upload
+    - name: 上传
       uses: actions/upload-artifact@v7
       with:
-        name: bin-x86_64-${{ matrix.threads }}-seh-ucrt
+        name: bin-x86_64-posix-seh-ucrt
         path: c:/buildroot/archives/
 
   release:
