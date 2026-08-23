@@ -16,11 +16,16 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         update: true
-        install: gettext
+        install: >-
+          gettext
+          mingw-w64-ucrt-x86_64-gettext
+          mingw-w64-ucrt-x86_64-libiconv
 
     - name: Patch script to enable NLS
       shell: msys2 {0}
-      run: sed -i 's/--disable-nls/--enable-nls/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
+      run: |
+        rm -f /ucrt64/lib/libintl.dll.a /ucrt64/lib/libiconv.dll.a
+        sed -i 's/--disable-nls/--enable-nls --with-libintl-prefix=\/ucrt64 --with-libiconv-prefix=\/ucrt64/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
 
     - name: 下载源文件
       shell: msys2 {0}
@@ -64,11 +69,16 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         update: true
-        install: gettext
+        install: >-
+          gettext
+          mingw-w64-ucrt-x86_64-gettext
+          mingw-w64-ucrt-x86_64-libiconv
 
     - name: Patch script to enable NLS
       shell: msys2 {0}
-      run: sed -i 's/--disable-nls/--enable-nls/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
+      run: |
+        rm -f /ucrt64/lib/libintl.dll.a /ucrt64/lib/libiconv.dll.a
+        sed -i 's/--disable-nls/--enable-nls --with-libintl-prefix=\/ucrt64 --with-libiconv-prefix=\/ucrt64/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
 
     - name: 下载源文件
       uses: actions/download-artifact@v8
