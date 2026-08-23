@@ -1,6 +1,7 @@
-name: x86_64 and i686 release builds
+name: x86_64 UCRT release builds
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 env:
   MINGW_BUILDS_GCC_VERSION: "16.2.0"
@@ -15,6 +16,11 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         update: true
+        install: gettext
+
+    - name: Patch script to enable NLS
+      shell: msys2 {0}
+      run: sed -i 's/--disable-nls/--enable-nls/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
 
     - name: Download sources
       shell: msys2 {0}
@@ -46,23 +52,13 @@ jobs:
         archive: false
 
   build:
-    name: ${{ matrix.arch }}-${{ matrix.threads }}-${{ matrix.exceptions }}-${{ matrix.msvcrt }}
+    name: x86_64-${{ matrix.threads }}-seh-ucrt
     runs-on: windows-latest
     needs: download
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, i686]
-        threads: [posix, win32, mcf]
-        exceptions: [seh, dwarf]
-        msvcrt: [msvcrt, ucrt]
-        exclude:
-          - arch: x86_64
-            exceptions: dwarf
-          - arch: i686
-            exceptions: seh
-          - threads: mcf
-            msvcrt: msvcrt
+        threads: [posix, mcf]
 
     steps:
     - uses: actions/checkout@v7
@@ -70,6 +66,11 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         update: true
+        install: gettext
+
+    - name: Patch script to enable NLS
+      shell: msys2 {0}
+      run: sed -i 's/--disable-nls/--enable-nls/g' scripts/gcc-$MINGW_BUILDS_GCC_VERSION.sh
 
     - name: Download sources
       uses: actions/download-artifact@v8
@@ -89,11 +90,11 @@ jobs:
         --buildroot=/c/buildroot
         --jobs=4
         --rev=0
-        --with-default-msvcrt=${{ matrix.msvcrt }}
+        --with-default-msvcrt=ucrt
         --rt-version=$MINGW_BUILDS_RT_VERSION
         --threads=${{ matrix.threads }}
-        --exceptions=${{ matrix.exceptions }}
-        --arch=${{ matrix.arch }}
+        --exceptions=seh
+        --arch=x86_64
         --bin-compress
         --enable-languages=c,c++,fortran
         --logviewer-command=cat
@@ -101,7 +102,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v7
       with:
-        name: bin-${{ matrix.arch }}-${{ matrix.threads }}-${{ matrix.exceptions }}-${{ matrix.msvcrt }}
+        name: bin-x86_64-${{ matrix.threads }}-seh-ucrt
         path: c:/buildroot/archives/
 
   release:
